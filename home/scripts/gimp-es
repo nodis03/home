@@ -1,0 +1,2 @@
+#!/bin/sh
+LANG=es_ES.UTF-8 gimp "$@"

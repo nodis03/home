@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# killsession - mata aplicaciones Flatpak en ejecución y servidores/sesión X
+# Uso: killsession [-q|--quiet]
+
+set -euo pipefail
+
+QUIET=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -q|--quiet) QUIET=true; shift ;;
+    -h|--help)
+      cat <<EOF
+Usage: $(basename "$0") [-q|--quiet]
+Kills running Flatpak applications and X server processes (Xorg, X, Xwayland).
+EOF
+      exit 0
+      ;;
+    *) echo "Parámetro desconocido: $1" >&2; exit 2 ;;
+  esac
+done
+
+log() { if ! $QUIET; then echo "$@"; fi }
+
+# 1) Matar aplicaciones Flatpak en ejecución
+apps=$(flatpak ps --columns=application 2>/dev/null | tail -n +2 || true)
+
+if [[ -z "${apps// /}" ]]; then
+  log "No hay aplicaciones Flatpak en ejecución."
+else
+  log "Matando aplicaciones Flatpak..."
+  while IFS= read -r app; do
+    [[ -z "$app" ]] && continue
+    if flatpak kill "$app" >/dev/null 2>&1; then
+      log "  -> Flatpak terminado: $app"
+    else
+      log "  -> No se pudo terminar (o ya cerrado): $app"
+    fi
+  done <<< "$apps"
+fi
+
+# 2) Terminar procesos de servidores/sesiones X
+x_names=(Xorg X Xwayland)
+killed_any=false
+
+for name in "${x_names[@]}"; do
+  pids=$(pgrep -x "$name" || true)
+  if [[ -n "$pids" ]]; then
+    killed_any=true
+    log "Terminando procesos '$name' (PIDs: $pids)..."
+    if [[ $EUID -ne 0 ]]; then
+      # Intentar terminar procesos del usuario actual; puede fallar con procesos de otros usuarios
+      if pkill -TERM -x "$name" >/dev/null 2>&1; then
+        log "  -> Enviada señal TERM a procesos '$name' (no root)."
+      else
+        log "  -> Falló pkill; puede necesitar 'sudo' para terminar procesos de otros usuarios."
+      fi
+    else
+      # root: matar todos los procesos encontrados
+      if kill -TERM $pids >/dev/null 2>&1; then
+        log "  -> Señal TERM enviada a PIDs: $pids"
+      else
+        log "  -> Error al enviar TERM a PIDs: $pids"
+      fi
+    fi
+  else
+    log "No se encontraron procesos '$name'."
+  fi
+done
+
+if ! $killed_any; then
+  log "No se encontraron servidores/sesiones X para terminar."
+fi
+
+log "Operación completada."

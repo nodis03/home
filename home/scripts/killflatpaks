@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Script to kill all running Flatpak applications
+
+# Get the list of running Flatpak apps
+apps=$(flatpak ps --columns=application | tail -n +2)
+
+if [ -z "$apps" ]; then
+    echo "No Flatpak applications are currently running."
+    exit 0
+fi
+
+echo "Killing the following Flatpak applications:"
+echo "$apps"
+
+# Kill each app
+for app in $apps; do
+    flatpak kill "$app"
+done
+
+echo "All Flatpak applications have been killed."
