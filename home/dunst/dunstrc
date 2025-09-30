@@ -1,0 +1,25 @@
+[global]
+font = Terminus (TTF) 12
+width = 300
+height = (10, 300)
+
+notification_limit = 5
+origin = top-right
+offset = 10x35
+timeout = 5
+scale = 0
+
+icon_corner_radius = 6
+icon_corners = all
+text_icon_padding = 15
+min_icon_size = 50
+max_icon_size = 50
+
+background = "#282828"
+foreground = "#eadab1"
+frame_color = "#9f957c"
+transparency = 0
+
+gap_size = 8
+layer = overlay
+# vim: ft=cfg
