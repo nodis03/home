@@ -1,5 +1,6 @@
 otf-font-awesome
 woff2-font-awesome
+noto-fonts-cjk
 lxappearance
 qbittorrent
 ffmpegthumbnailer
